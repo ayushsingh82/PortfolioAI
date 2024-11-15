@@ -2,6 +2,7 @@ import { HandlerContext, SkillResponse } from "@xmtp/message-kit";
 import { getUserInfo, clearInfoCache, isOnXMTP } from "@xmtp/message-kit";
 import { isAddress } from "viem";
 import { clearMemory } from "@xmtp/message-kit";
+import axios from "axios";
 
 export const frameUrl = "https://ens.steer.fun/";
 export const ensUrl = "https://app.ens.domains/";
@@ -21,9 +22,7 @@ export async function handleEns(
     clearMemory();
     return { code: 200, message: "Conversation reset." };
   } else if (skill == "renew") {
-    // Destructure and validate parameters for the ens
     const { domain } = params;
-    // Check if the user holds the domain
     if (!domain) {
       return {
         code: 400,
@@ -41,14 +40,10 @@ export async function handleEns(
       };
     }
 
-    // Generate URL for the ens
     let url_ens = frameUrl + "frames/manage?name=" + domain;
     return { code: 200, message: `${url_ens}` };
   } else if (skill == "register") {
-    // Destructure and validate parameters for the ens
     const { domain } = params;
-
-    // Generate URL for the ens
     let url_ens = ensUrl + domain;
     await context.send(url_ens);
   } else if (skill == "info") {
@@ -131,11 +126,40 @@ export async function handleEns(
     };
   } else if (skill == "cool") {
     const { domain } = params;
-    //What about these cool alternatives?\
     return {
       code: 200,
       message: `${generateCoolAlternatives(domain)}`,
     };
+  } else if (skill == "portfolio") {
+    const { address } = params;
+    if (!isAddress(address)) {
+      return { code: 400, message: "Invalid address provided." };
+    }
+
+    try {
+      const response = await axios.get(
+        "https://api.1inch.dev/portfolio/portfolio/v4/overview/erc20/profit_and_loss",
+        {
+          headers: {
+            Authorization: "Bearer xDxGzCSlftybzYlijocx1yZRky74jkU5",
+          },
+          params: { addresses: [address], chain_id: "56" },
+        },
+      );
+      return {
+        code: 200,
+        message: `Portfolio data for ${address}: ${JSON.stringify(
+          response.data,
+          null,
+          2,
+        )}`,
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        message: `Failed to fetch portfolio data: ${error}`,
+      };
+    }
   } else {
     return { code: 400, message: "Skill not found." };
   }
@@ -146,7 +170,7 @@ export const generateCoolAlternatives = (domain: string) => {
   const alternatives = [];
   for (let i = 0; i < 5; i++) {
     const randomPosition = Math.random() < 0.5;
-    const baseDomain = domain.replace(/\.eth$/, ""); // Remove any existing .eth suffix
+    const baseDomain = domain.replace(/\.eth$/, "");
     alternatives.push(
       randomPosition
         ? `${suffixes[i]}${baseDomain}.eth`
