@@ -111,7 +111,14 @@ export const skills: SkillGroup[] = [
             type: "string",
           }
         },
-      }
+      },
+      {
+        skill: "/hi",
+        handler: handleEns,
+        description: "Get a welcome message and guide to using the platform",
+        examples: ["/hi"],
+        params: {},
+      },
     ],
   },
 ];

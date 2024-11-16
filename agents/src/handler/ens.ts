@@ -298,10 +298,43 @@ export async function handleEns(
         message: `Failed to get swap quote: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
-  }
-   else {
+  } else if (skill === "hi") {
+    const welcomeMessage = `👋 Hi! Welcome to the ENS Domain Bot Platform!
+
+Here are the main commands you can use:
+
+1. 🏷️ Register an ENS domain:
+   /register [domain]
+   Example: /register vitalik.eth
+
+2. 📊 Check your portfolio:
+   /portfolio [address] [chain]
+   Example: /portfolio 0x1234...5678 eth
+
+3. 💱 Swap tokens (on BSC):
+   /swap [fromToken] [toToken] [amount]
+   Example: /swap BNB USDT 1
+
+Other useful commands:
+• /info [domain] - Get domain details
+• /check [domain] - Check domain availability
+• /cool [domain] - Get cool domain suggestions
+• /tip [address] - Tip a domain owner
+
+Need help? Just type /hi again to see this message!`;
+
+    // Send welcome message via context.send
+    await context.send(welcomeMessage);
+
+    // Return a shorter message
+    return {
+      code: 200,
+      message: "Type any command to get started! 🚀",
+    };
+  } else {
     return { code: 400, message: "Skill not found." };
   }
+  
 }
 
 export const generateCoolAlternatives = (domain: string) => {
