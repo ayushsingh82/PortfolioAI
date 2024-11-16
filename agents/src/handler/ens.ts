@@ -4,11 +4,29 @@ import { isAddress } from "viem";
 import { clearMemory } from "@xmtp/message-kit";
 import axios from "axios";
 
-
-
 export const frameUrl = "https://ens.steer.fun/";
 export const ensUrl = "https://app.ens.domains/";
 export const txpayUrl = "https://txpay.vercel.app";
+export const oneInchApiUrl = "https://api.1inch.dev/swap/v5.2";
+export const oneInchApiKey = "xDxGzCSlftybzYlijocx1yZRky74jkU5";
+
+// Add these token addresses as constants
+const TOKEN_ADDRESSES: Record<string, Record<string, string>> = {
+  eth: {
+    ETH: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  },
+  bsc: {
+    BNB: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    USDT: "0x55d398326f99059fF775485246999027B3197955",
+    BUSD: "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
+    USDC: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+    WBNB: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+  }
+};
 
 export async function handleEns(
   context: HandlerContext,
@@ -192,12 +210,90 @@ export async function handleEns(
         message: `Failed to fetch portfolio data: ${error}`,
       };
     }
+  } else if (skill === "swap") {
+    const { fromToken, toToken, amount, chain = "bsc" } = params;
+    
+    if (!fromToken || !toToken || !amount) {
+      return {
+        code: 400,
+        message: "Please provide fromToken, toToken, and amount parameters.",
+      };
+    }
+
+    console.log("Fetching swap quote for:", { fromToken, toToken, amount, chain });
+
+    try {
+      const chainIdMap: Record<string, number> = {
+        bsc: 56,  // BSC first as default
+        eth: 1,
+        polygon: 137,
+        arbitrum: 42161,
+        optimism: 10,
+        base: 8453
+      };
+
+      const chainId = chainIdMap[chain.toLowerCase()];
+      
+      if (!chainId) {
+        throw new Error(`Invalid chain: ${chain}`);
+      }
+
+      const fromTokenUpper = (fromToken as string).toUpperCase();
+      const toTokenUpper = (toToken as string).toUpperCase();
+
+      // Check if tokens exist for the selected chain
+      if (!TOKEN_ADDRESSES[chain.toLowerCase()] || 
+          !TOKEN_ADDRESSES[chain.toLowerCase()][fromTokenUpper] || 
+          !TOKEN_ADDRESSES[chain.toLowerCase()][toTokenUpper]) {
+        throw new Error(`Invalid token symbol for ${chain}. Supported tokens for BSC: BNB, USDT, BUSD, USDC, WBNB`);
+      }
+
+      const fromTokenAddress = TOKEN_ADDRESSES[chain.toLowerCase()][fromTokenUpper];
+      const toTokenAddress = TOKEN_ADDRESSES[chain.toLowerCase()][toTokenUpper];
+
+      const quoteResponse = await axios.get(
+        `${oneInchApiUrl}/${chainId}/quote`,
+        {
+          headers: {
+            Authorization: `Bearer ${oneInchApiKey}`,
+          },
+          params: {
+            fromTokenAddress,
+            toTokenAddress,
+            amount,
+          },
+        }
+      );
+
+      console.log("Quote Response:", quoteResponse.data);
+
+      const { toTokenAmount, estimatedGas } = quoteResponse.data;
+
+      // Format the amounts to be more readable
+      const fromAmount = Number(amount) / (10 ** 18);
+      const toAmount = Number(toTokenAmount) / (10 ** 18);
+
+      await context.send(
+        `Swap Quote Details:\nChain: BSC (BNB Chain)\nFrom: ${fromAmount} ${fromToken}\nTo: ${toAmount} ${toToken}\nEstimated Gas: ${estimatedGas} GWEI`
+      );
+
+      return {
+        code: 200,
+        message: `Swap here: https://app.1inch.io/#/${chainId}/simple/swap/${fromTokenAddress}/${toTokenAddress}`
+      };
+
+    } catch (error) {
+      console.error("Error fetching swap quote:", error);
+      return {
+        code: 500,
+        message: `Failed to get swap quote: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
   }
    else {
     return { code: 400, message: "Skill not found." };
   }
 }
-
 
 export const generateCoolAlternatives = (domain: string) => {
   const suffixes = ["lfg", "cool", "degen", "moon", "base", "gm"];

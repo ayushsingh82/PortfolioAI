@@ -94,6 +94,23 @@ export const skills: SkillGroup[] = [
             type: "string",
           },
         }
+      },
+      {
+        skill: "/swap [fromToken] [toToken] [amount]",
+        description: "Get a quote for swapping tokens using 1inch (Supported tokens: ETH/USDC/USDT/DAI/WETH)",
+        handler: handleEns,
+        examples: ["/swap fromToken=ETH toToken=USDC amount=1000000000000000000"],
+        params: {
+          fromToken: {
+            type: "string",
+          },
+          toToken: {
+            type: "string",
+          },
+          amount: {
+            type: "string",
+          }
+        },
       }
     ],
   },
