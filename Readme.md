@@ -30,4 +30,5 @@ We have built an **ENS Name AI Agent** integrated with the **Convers App** that 
 - **1inch Fusion Swap**: Integrated for facilitating token swaps.
 - **XMTP**: For secure messaging and notification delivery.
 - **ENS (Ethereum Name Service)**: Used for user-friendly portfolio queries.
+- **Blockscout**: For showing the transaction details on blockscout if one user tips the another user by sending some funds.
 - **MessageUI-Kit / **: For decentralised agent  interactions

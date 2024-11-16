@@ -160,8 +160,8 @@ export async function handleEns(
         `2. Click the link below\n` +
         `3. Confirm transaction\n` +
         `4. Track your transaction:\n` +
-        `   • BSCScan: https://bscscan.com/address/${address}\n` +
-        `   • Blockscout: https://bscscan.com/token/${bscUsdcAddress}?a=${address}`
+        `   • BSCScan 💫 : https://bscscan.com/address/${address}\n\n` +
+        `   • Blockscout 💫 : https://bscscan.com/token/${bscUsdcAddress}?a=${address}`
       );
 
       await context.send(
@@ -171,8 +171,8 @@ export async function handleEns(
       return {
         code: 200,
         message: `💫 View transaction details:\n` +
-                 `• BSCScan: https://bscscan.com/token/${bscUsdcAddress}?a=${address}\n` +
-                 `• Blockscout: https://blockscout.com/bsc/mainnet/address/${address}/tokens`
+                 `• BSCScan 💫 : https://bscscan.com/token/${bscUsdcAddress}?a=${address}\n\n` +
+                 `• Blockscout 💫  : https://blockscout.com/bsc/mainnet/address/${address}/tokens`
       };
 
     } catch (error) {
@@ -371,6 +371,7 @@ export async function handleEns(
 📌 𝗗𝗼𝗺𝗮𝗶𝗻 𝗠𝗮𝗻𝗮𝗴𝗲𝗺𝗲𝗻𝘁
    • /register [domain] ➜ Register new domain
    • /info [domain] ➜ Get domain details
+   • /ens ➜ Available domains
    • /check [domain] ➜ Check availability
    • /renew [domain] ➜ Extend registration
    
