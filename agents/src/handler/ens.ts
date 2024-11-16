@@ -131,17 +131,63 @@ export async function handleEns(
     if (!address) {
       return {
         code: 400,
-        message: "Please provide an address to tip.",
+        message: "❌ Please provide an address to tip.\nExample: /tip 0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
       };
     }
-    const data = await getUserInfo(address);
 
-    let sendUrl = `${txpayUrl}/?&amount=1&token=USDC&receiver=${address}`;
+    if (!isAddress(address)) {
+      return {
+        code: 400,
+        message: "❌ Invalid Ethereum address provided. Please check the address and try again.",
+      };
+    }
 
-    return {
-      code: 200,
-      message: sendUrl,
-    };
+    try {
+      // BSC USDC contract address
+      const bscUsdcAddress = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d";
+      const chainId = 56; // BSC chain ID
+      const amount = "100000"; // 0.1 USDC (6 decimals)
+
+      // Create the transaction data for USDC transfer
+      const txData = {
+        from: sender?.address || "",
+        to: bscUsdcAddress,
+        value: "0", // 0 for token transfers
+        data: `0xa9059cbb${address.slice(2).padStart(64, '0')}${amount.padStart(64, '0')}`, // transfer(address,uint256)
+        chainId: chainId,
+      };
+
+      await context.send(
+        `💝 Tip Details\n` +
+        `━━━━━━━━━━━━━━━━━━━━━\n` +
+        `👤 Recipient: ${address.slice(0, 6)}...${address.slice(-4)}\n` +
+        `💰 Amount: 0.1 USDC\n` +
+        `🔗 Chain: BSC\n` +
+        `🏦 Token Contract: ${bscUsdcAddress.slice(0, 6)}...${bscUsdcAddress.slice(-4)}\n` +
+        `━━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `📱 Steps:\n` +
+        `1. Make sure you're on BSC network\n` +
+        `2. Click the button below\n` +
+        `3. Confirm in MetaMask`
+      );
+
+      await context.send(
+        `🚀 ${txpayUrl}/?recipientAddress=${address}&tokenAddress=${bscUsdcAddress}&chainId=${chainId}&amount=0.1`,
+      );
+
+      // Return transaction data that will trigger MetaMask
+      return {
+        code: 200,
+        message: `🚀 Send Tip (Click to open MetaMask):\n\`\`\`json\n${JSON.stringify(txData, null, 2)}\n\`\`\`\n\nOr use txpay:\n${txpayUrl}/?recipientAddress=${address}&tokenAddress=${bscUsdcAddress}&chainId=${chainId}&amount=0.1`,
+      };
+
+    } catch (error) {
+      console.error("Error generating tip transaction:", error);
+      return {
+        code: 500,
+        message: "❌ Failed to generate tip transaction. Please try again.",
+      };
+    }
   } else if (skill == "cool") {
     const { domain } = params;
     return {
@@ -336,7 +382,7 @@ export async function handleEns(
   1. /check vitalik.eth
   2. /swap BNB USDT 1
   3. /portfolio [your-address] eth
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 ❓ Need help? Type /hi anytime!`;
 
@@ -346,6 +392,74 @@ export async function handleEns(
       code: 200,
       message: `✨ Welcome! Try any command above to get started! ✨`,
     };
+  } else if (skill === "ens") {
+    try {
+      const prefixes = ["web3", "defi", "nft", "dao", "meta"];
+      const suffixes = ["dev", "pro", "guru", "master", "wizard"];
+      const suggestions = [];
+
+      // First message to show we're working
+      await context.send(
+        `🎨 Generating ENS Suggestions\n` +
+        `━━━━━━━━━━━━━━━━━━━━━\n` +
+        `Please wait while I check availability...`
+      );
+
+      // Generate domain suggestions with error handling
+      for (let i = 0; i < 5; i++) {
+        try {
+          const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+          const randomSuffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+          const suggestion = `${randomPrefix}${randomSuffix}.eth`;
+          
+          try {
+            const data = await getUserInfo(suggestion);
+            if (!data?.address) {
+              suggestions.push(`✅ ${suggestion} - Available!`);
+            } else {
+              suggestions.push(`❌ ${suggestion} - Taken`);
+            }
+          } catch (error) {
+            console.error(`Error checking domain ${suggestion}:`, error);
+            suggestions.push(`⚠️ ${suggestion} - Status unknown`);
+          }
+        } catch (error) {
+          console.error("Error generating suggestion:", error);
+          continue;
+        }
+      }
+
+      // Add year-based and numeric suggestions without checking availability
+      const year = new Date().getFullYear();
+      const randomNum = Math.floor(Math.random() * 999).toString().padStart(3, '0');
+      suggestions.push(`💫 ${year}web3.eth - Try this!`);
+      suggestions.push(`💫 defi${randomNum}.eth - Try this!`);
+
+      // Send the results via context.send
+      await context.send(
+        `🎯 ENS Name Suggestions\n` +
+        `━━━━━━━━━━━━━━━━━━━━━\n` +
+        `${suggestions.join('\n')}\n` +
+        `━━━━━━━━━━━━━━━━━━━━━`
+      );
+
+      // Return the registration link
+      return {
+        code: 200,
+        message: `💡 Register any available name at:\n${ensUrl}\n\n✨ Try /cool [domain] for more suggestions!`
+      };
+
+    } catch (error) {
+      console.error("Error in ENS command:", error);
+      return {
+        code: 500,
+        message: `❌ Something went wrong while generating suggestions.\n` +
+                `Try these formats instead:\n` +
+                `• [year]web3.eth\n` +
+                `• defi[number].eth\n` +
+                `• web3[name].eth`
+      };
+    }
   } else {
     return { code: 400, message: "Skill not found." };
   }

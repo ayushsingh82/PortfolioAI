@@ -119,6 +119,13 @@ export const skills: SkillGroup[] = [
         examples: ["/hi"],
         params: {},
       },
+      {
+        skill: "/ens",
+        handler: handleEns,
+        description: "Get creative and available ENS name suggestions",
+        examples: ["/ens"],
+        params: {},
+      },
     ],
   },
 ];
