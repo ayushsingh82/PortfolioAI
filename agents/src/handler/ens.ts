@@ -143,19 +143,9 @@ export async function handleEns(
     }
 
     try {
-      // BSC USDC contract address
       const bscUsdcAddress = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d";
-      const chainId = 56; // BSC chain ID
-      const amount = "100000"; // 0.1 USDC (6 decimals)
-
-      // Create the transaction data for USDC transfer
-      const txData = {
-        from: sender?.address || "",
-        to: bscUsdcAddress,
-        value: "0", // 0 for token transfers
-        data: `0xa9059cbb${address.slice(2).padStart(64, '0')}${amount.padStart(64, '0')}`, // transfer(address,uint256)
-        chainId: chainId,
-      };
+      const chainId = 56;
+      const amount = "100000";
 
       await context.send(
         `💝 Tip Details\n` +
@@ -167,25 +157,29 @@ export async function handleEns(
         `━━━━━━━━━━━━━━━━━━━━━\n\n` +
         `📱 Steps:\n` +
         `1. Make sure you're on BSC network\n` +
-        `2. Click the button below\n` +
-        `3. Confirm in MetaMask`
+        `2. Click the link below\n` +
+        `3. Confirm transaction\n` +
+        `4. Track your transaction:\n` +
+        `   • BSCScan: https://bscscan.com/address/${address}\n` +
+        `   • Blockscout: https://bscscan.com/token/${bscUsdcAddress}?a=${address}`
       );
 
       await context.send(
-        `🚀 ${txpayUrl}/?recipientAddress=${address}&tokenAddress=${bscUsdcAddress}&chainId=${chainId}&amount=0.1`,
+        `🚀 Click to send tip:\n${txpayUrl}/?recipientAddress=${address}&tokenAddress=${bscUsdcAddress}&chainId=${chainId}&amount=0.1`
       );
 
-      // Return transaction data that will trigger MetaMask
       return {
         code: 200,
-        message: `🚀 Send Tip (Click to open MetaMask):\n\`\`\`json\n${JSON.stringify(txData, null, 2)}\n\`\`\`\n\nOr use txpay:\n${txpayUrl}/?recipientAddress=${address}&tokenAddress=${bscUsdcAddress}&chainId=${chainId}&amount=0.1`,
+        message: `💫 View transaction details:\n` +
+                 `• BSCScan: https://bscscan.com/token/${bscUsdcAddress}?a=${address}\n` +
+                 `• Blockscout: https://blockscout.com/bsc/mainnet/address/${address}/tokens`
       };
 
     } catch (error) {
-      console.error("Error generating tip transaction:", error);
+      console.error("Error generating tip link:", error);
       return {
         code: 500,
-        message: "❌ Failed to generate tip transaction. Please try again.",
+        message: "❌ Failed to generate tip link. Please try again.",
       };
     }
   } else if (skill == "cool") {
@@ -370,7 +364,7 @@ export async function handleEns(
     const welcomeMessage = `
 ╔════════════════════════════════╗
 ║     ✨ ENS DOMAIN BOT ✨      ║
-╚════════════════════════════════╝
+╚════════���═══════════════════════╝
 
 🎮 𝗠𝗔𝗜𝗡 𝗙𝗘𝗔𝗧𝗨𝗥𝗘𝗦:
 
