@@ -194,22 +194,24 @@ export async function handleEns(
       }
     ));
     console.log(newdtaa[0].abs_profit_usd+newdtaa[0].roi);
- await context.send(`abs_profit_usd : ${newdtaa[0].abs_profit_usd}`+`\n roi: ${newdtaa[0].roi}`); // Send data back to the context
+ await context.send(
+        `📊 Portfolio Analysis\n` +
+        `━━━━━━━━━━━━━━━━━━━━━\n` +
+        `💰 Profit/Loss: $${Number(newdtaa[0].abs_profit_usd).toFixed(2)}\n` +
+        `📈 ROI: ${(Number(newdtaa[0].roi) * 100).toFixed(2)}%\n` +
+        `🔗 Chain: Ethereum\n` +
+        `━━━━━━━━━━━━━━━━━━━━━`
+      );
 
       return {
         code: 200,
-        message: `Portfolio data for ${address}: ${JSON.stringify(
-          response.data,
-          null,
-          2
-        )}`,
+        message: `🔍 View more details on Etherscan: https://etherscan.io/address/${address}`,
       };
     } catch (error) {
       console.error("Error fetching portfolio data:", error);
-
       return {
         code: 500,
-        message: `Failed to fetch portfolio data: ${error}`,
+        message: `❌ Failed to fetch portfolio data: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
   } else if (skill === "swap") {
@@ -280,56 +282,69 @@ export async function handleEns(
       const toAmount = Number(dstAmount) / (10 ** 18);
       const estimatedGasInGwei = Number(gasPrice) / (10 ** 9);
 
-      // Send quote details via context.send
       await context.send(
-        `Swap Quote Details:\nChain: BSC (BNB Chain)\nFrom: ${fromAmount} ${fromTokenUpper}\nTo: ${toAmount.toFixed(2)} ${toTokenUpper}\nEstimated Gas: ${gas} units @ ${estimatedGasInGwei} GWEI`
+        `💱 Swap Quote Details\n` +
+        `━━━━━━━━━━━━━━━━━━━━━\n` +
+        `🔗 Chain: BSC (BNB Chain)\n` +
+        `📤 From: ${fromAmount} ${fromTokenUpper}\n` +
+        `📥 To: ${toAmount.toFixed(2)} ${toTokenUpper}\n` +
+        `⛽ Gas: ${gas} units @ ${estimatedGasInGwei} GWEI\n` +
+        `━━━━━━━━━━━━━━━━━━━━━`
       );
 
-      // Return only the swap URL
       return {
         code: 200,
-        message: `Swap here: https://app.1inch.io/#/${chainId}/simple/swap/${fromTokenAddress}/${toTokenAddress}`
+        message: `🚀 Ready to swap? Click here:\n` +
+                 `https://app.1inch.io/#/${chainId}/simple/swap/${fromTokenAddress}/${toTokenAddress}`,
       };
 
     } catch (error) {
       console.error("Error fetching swap quote:", error);
       return {
         code: 500,
-        message: `Failed to get swap quote: ${error instanceof Error ? error.message : 'Unknown error'}`
+        message: `❌ Failed to get swap quote: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
   } else if (skill === "hi") {
-    const welcomeMessage = `👋 Hi! Welcome to the ENS Domain Bot Platform!
+    const welcomeMessage = `
+╔════════════════════════════════╗
+║     ✨ ENS DOMAIN BOT ✨      ║
+╚════════════════════════════════╝
 
-Here are the main commands you can use:
+🎮 𝗠𝗔𝗜𝗡 𝗙𝗘𝗔𝗧𝗨𝗥𝗘𝗦:
 
-1. 🏷️ Register an ENS domain:
-   /register [domain]
-   Example: /register vitalik.eth
+📌 𝗗𝗼𝗺𝗮𝗶𝗻 𝗠𝗮𝗻𝗮𝗴𝗲𝗺𝗲𝗻𝘁
+   • /register [domain] ➜ Register new domain
+   • /info [domain] ➜ Get domain details
+   • /check [domain] ➜ Check availability
+   • /renew [domain] ➜ Extend registration
+   
+💎 𝗗𝗲𝗙𝗶 𝗧𝗼𝗼𝗹𝘀
+   • /swap [fromToken] [toToken] [amount]
+     └─ Example: /swap BNB USDT 1
+     └─ Supported: BNB, USDT, BUSD, USDC
+   
+   • /portfolio [address] [chain]
+     └─ Example: /portfolio 0x1234...5678 eth
+     └─ View profit/loss and ROI
 
-2. 📊 Check your portfolio:
-   /portfolio [address] [chain]
-   Example: /portfolio 0x1234...5678 eth
+🎲 𝗘𝘅𝘁𝗿𝗮 𝗙𝗲𝗮𝘁𝘂𝗿𝗲𝘀
+   • /cool [domain] ➜ Get creative suggestions
+   • /tip [address] ➜ Send tips to owners
 
-3. 💱 Swap tokens (on BSC):
-   /swap [fromToken] [toToken] [amount]
-   Example: /swap BNB USDT 1
+┏━━━━━━━━ 𝗤𝗨𝗜𝗖𝗞 𝗦𝗧𝗔𝗥𝗧 ━━━━━━━┓
+  1. /check vitalik.eth
+  2. /swap BNB USDT 1
+  3. /portfolio [your-address] eth
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-Other useful commands:
-• /info [domain] - Get domain details
-• /check [domain] - Check domain availability
-• /cool [domain] - Get cool domain suggestions
-• /tip [address] - Tip a domain owner
+❓ Need help? Type /hi anytime!`;
 
-Need help? Just type /hi again to see this message!`;
-
-    // Send welcome message via context.send
     await context.send(welcomeMessage);
 
-    // Return a shorter message
     return {
       code: 200,
-      message: "Type any command to get started! 🚀",
+      message: `✨ Welcome! Try any command above to get started! ✨`,
     };
   } else {
     return { code: 400, message: "Skill not found." };
