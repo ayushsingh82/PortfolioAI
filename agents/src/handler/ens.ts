@@ -195,16 +195,32 @@ export async function handleEns(
       message: `${generateCoolAlternatives(domain)}`,
     };
   } else if (skill === "portfolio") {
-    const { address } = params;
+    const { address, chain = "eth" } = params;
 
-    if (!isAddress(address)) {
-      return { code: 400, message: "Invalid address provided." };
+    // Hardcoded mapping for ayush.eth
+    if (address === "ayush.eth") {
+      const ayushAddress = "0x1453b01609d09CcB6787338C96A549Fc449715f4";
+      console.log("Using hardcoded address for ayush.eth:", ayushAddress);
+      params.address = ayushAddress;
     }
 
-    console.log("Fetching portfolio data for address:", address);
+    // Check if the input is a valid address or ENS name
+    if (!isAddress(params.address)) {
+      try {
+        // For other ENS names, try to resolve them (except ayush.eth which is already handled)
+        const data = await getUserInfo(params.address);
+        if (!data?.address) {
+          return { code: 400, message: "❌ Invalid address or ENS name provided." };
+        }
+        params.address = data.address;
+      } catch (error) {
+        return { code: 400, message: "❌ Could not resolve ENS name. Please use a valid address." };
+      }
+    }
+
+    console.log("Fetching portfolio data for address:", params.address);
 
     try {
-
       const chainIdMap: Record<string, number> = {
         bsc: 56,
         eth: 1,
@@ -214,45 +230,44 @@ export async function handleEns(
         base: 8453
       };
 
-      const inputChain = "eth"; // Replace with your input
-      const chainId = chainIdMap[inputChain];
+      const chainId = chainIdMap[chain.toLowerCase()];
     
       if (!chainId) {
-        throw new Error(`Invalid chain input: ${inputChain}`);
+        throw new Error(`Invalid chain input: ${chain}`);
       }
 
-      
       const response = await axios.get(
         "https://api.1inch.dev/portfolio/portfolio/v4/overview/erc20/profit_and_loss",
         {
           headers: {
             Authorization: "Bearer xDxGzCSlftybzYlijocx1yZRky74jkU5",
           },
-          params: { addresses: address,  chain_id: chainId, },
+          params: { addresses: params.address, chain_id: chainId },
         }
       );
 
       console.log("Response Data:", response.data);
   
-      const newdtaa=response.data.result.map((item: any) => ({
+      const newdtaa = response.data.result.map((item: any) => ({
         abs_profit_usd: item.abs_profit_usd,
         roi: item.roi,
-      }
-    ));
-    console.log(newdtaa[0].abs_profit_usd+newdtaa[0].roi);
- await context.send(
+      }));
+
+      await context.send(
         `📊 Portfolio Analysis\n` +
         `━━━━━━━━━━━━━━━━━━━━━\n` +
+        `👤 Address: ${params.address.slice(0, 6)}...${params.address.slice(-4)}\n` +
         `💰 Profit/Loss: $${Number(newdtaa[0].abs_profit_usd).toFixed(2)}\n` +
         `📈 ROI: ${(Number(newdtaa[0].roi) * 100).toFixed(2)}%\n` +
-        `🔗 Chain: Ethereum\n` +
+        `🔗 Chain: ${chain.toUpperCase()}\n` +
         `━━━━━━━━━━━━━━━━━━━━━`
       );
 
       return {
         code: 200,
-        message: `🔍 View more details on Etherscan: https://etherscan.io/address/${address}`,
+        message: `🔍 View more details on explorer:\n${chain === 'bsc' ? 'https://bscscan.com/address/' : 'https://etherscan.io/address/'}${params.address}`,
       };
+
     } catch (error) {
       console.error("Error fetching portfolio data:", error);
       return {
