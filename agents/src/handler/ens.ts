@@ -137,6 +137,7 @@ export async function handleEns(
     }
 
     try {
+      console.log("hi");
       const response = await axios.get(
         "https://api.1inch.dev/portfolio/portfolio/v4/overview/erc20/profit_and_loss",
         {
@@ -146,6 +147,8 @@ export async function handleEns(
           params: { addresses: [address], chain_id: "56" },
         },
       );
+      console.log("hey hey");
+      console.log(response.data);
       return {
         code: 200,
         message: `Portfolio data for ${address}: ${JSON.stringify(
@@ -153,7 +156,9 @@ export async function handleEns(
           null,
           2,
         )}`,
+        
       };
+   
     } catch (error) {
       return {
         code: 500,
@@ -164,6 +169,7 @@ export async function handleEns(
     return { code: 400, message: "Skill not found." };
   }
 }
+
 
 export const generateCoolAlternatives = (domain: string) => {
   const suffixes = ["lfg", "cool", "degen", "moon", "base", "gm"];
