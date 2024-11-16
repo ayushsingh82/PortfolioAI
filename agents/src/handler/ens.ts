@@ -142,13 +142,27 @@ export async function handleEns(
     console.log("Fetching portfolio data for address:", address);
 
     try {
+
+      const chainIdMap: Record<string, number> = {
+        base: 56,
+        eth: 1,
+      };
+
+      const inputChain = "eth"; // Replace with your input
+      const chainId = chainIdMap[inputChain];
+    
+      if (!chainId) {
+        throw new Error(`Invalid chain input: ${inputChain}`);
+      }
+
+      
       const response = await axios.get(
         "https://api.1inch.dev/portfolio/portfolio/v4/overview/erc20/profit_and_loss",
         {
           headers: {
             Authorization: "Bearer xDxGzCSlftybzYlijocx1yZRky74jkU5",
           },
-          params: { addresses: address, chain_id: 56 },
+          params: { addresses: address,  chain_id: chainId, },
         }
       );
 

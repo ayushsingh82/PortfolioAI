@@ -84,11 +84,11 @@ export const skills: SkillGroup[] = [
         },
       },
       {
-        skill: "/portfolio [address]",
+        skill: "/portfolio [address] [chainId]",
         description:
           "Get profit and loss data for the given address using the 1inch API.",
         handler: handleEns,
-        examples: ["/portfolio 0x1453b01609d09CcB6787338C96A549Fc449715f..."],
+        examples: ["/portfolio 0x1453b01609d09CcB6787338C96A549Fc449715f...  base"],
         params: {
           address: {
             type: "string",
