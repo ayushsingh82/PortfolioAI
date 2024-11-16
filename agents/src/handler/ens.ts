@@ -131,18 +131,27 @@ export async function handleEns(
     if (!address) {
       return {
         code: 400,
-        message: "❌ Please provide an address to tip.\nExample: /tip 0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-      };
-    }
-
-    if (!isAddress(address)) {
-      return {
-        code: 400,
-        message: "❌ Invalid Ethereum address provided. Please check the address and try again.",
+        message: "❌ Please provide an address or ENS name to tip.\nExample: /tip humanagent.eth",
       };
     }
 
     try {
+      let recipientAddress = address;
+      let ensName = "";
+
+      // Check if input is ENS name
+      if (address.endsWith('.eth')) {
+        const ensData = await getUserInfo(address);
+        if (!ensData?.address) {
+          return {
+            code: 400,
+            message: "❌ Could not resolve ENS name. Please check if it exists.",
+          };
+        }
+        recipientAddress = ensData.address;
+        ensName = address;
+      }
+
       const bscUsdcAddress = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d";
       const chainId = 56;
       const amount = "100000";
@@ -150,7 +159,7 @@ export async function handleEns(
       await context.send(
         `💝 Tip Details\n` +
         `━━━━━━━━━━━━━━━━━━━━━\n` +
-        `👤 Recipient: ${address.slice(0, 6)}...${address.slice(-4)}\n` +
+        `👤 Recipient: ${ensName || recipientAddress.slice(0, 6) + '...' + recipientAddress.slice(-4)}\n` +
         `💰 Amount: 0.1 USDC\n` +
         `🔗 Chain: BSC\n` +
         `🏦 Token Contract: ${bscUsdcAddress.slice(0, 6)}...${bscUsdcAddress.slice(-4)}\n` +
@@ -160,19 +169,19 @@ export async function handleEns(
         `2. Click the link below\n` +
         `3. Confirm transaction\n` +
         `4. Track your transaction:\n` +
-        `   • BSCScan 💫 : https://bscscan.com/address/${address}\n\n` +
-        `   • Blockscout 💫 : https://bscscan.com/token/${bscUsdcAddress}?a=${address}`
+        `   • BSCScan 💫 : https://bscscan.com/address/${recipientAddress}\n` +
+        `   • Blockscout 💫 : https://blockscout.com/bsc/mainnet/address/${recipientAddress}/tokens`
       );
 
       await context.send(
-        `🚀 Click to send tip:\n${txpayUrl}/?recipientAddress=${address}&tokenAddress=${bscUsdcAddress}&chainId=${chainId}&amount=0.1`
+        `🚀 Click to send tip:\n${txpayUrl}/?recipientAddress=${recipientAddress}&tokenAddress=${bscUsdcAddress}&chainId=${chainId}&amount=0.1`
       );
 
       return {
         code: 200,
         message: `💫 View transaction details:\n` +
-                 `• BSCScan 💫 : https://bscscan.com/token/${bscUsdcAddress}?a=${address}\n\n` +
-                 `• Blockscout 💫  : https://blockscout.com/bsc/mainnet/address/${address}/tokens`
+                 `• BSCScan 💫 : https://bscscan.com/token/${bscUsdcAddress}?a=${recipientAddress}\n` +
+                 `• Blockscout 💫 : https://blockscout.com/bsc/mainnet/address/${recipientAddress}/tokens`
       };
 
     } catch (error) {
@@ -201,7 +210,6 @@ export async function handleEns(
     // Check if the input is a valid address or ENS name
     if (!isAddress(params.address)) {
       try {
-        // For other ENS names, try to resolve them (except ayush.eth which is already handled)
         const data = await getUserInfo(params.address);
         if (!data?.address) {
           return { code: 400, message: "❌ Invalid address or ENS name provided." };
@@ -215,19 +223,18 @@ export async function handleEns(
     console.log("Fetching portfolio data for address:", params.address);
 
     try {
-      const chainIdMap: Record<string, number> = {
-        bsc: 56,
-        eth: 1,
-        polygon: 137,
-        arbitrum: 42161,
-        optimism: 10,
-        base: 8453
+      const chainIdMap: Record<string, { id: number, name: string }> = {
+        bsc: { id: 56, name: "BSC" },
+        eth: { id: 1, name: "ETH" },
+        polygon: { id: 137, name: "POLYGON" },
+        arbitrum: { id: 42161, name: "ARBITRUM" },
+        optimism: { id: 10, name: "OPTIMISM" },
+        base: { id: 8453, name: "BASE" }
       };
 
-      const chainId = chainIdMap[chain.toLowerCase()];
-    
-      if (!chainId) {
-        throw new Error(`Invalid chain input: ${chain}`);
+      const selectedChain = chainIdMap[chain.toLowerCase()];
+      if (!selectedChain) {
+        throw new Error(`Invalid chain: ${chain}`);
       }
 
       const response = await axios.get(
@@ -236,7 +243,7 @@ export async function handleEns(
           headers: {
             Authorization: "Bearer xDxGzCSlftybzYlijocx1yZRky74jkU5",
           },
-          params: { addresses: params.address, chain_id: chainId },
+          params: { addresses: params.address, chain_id: selectedChain.id },
         }
       );
 
@@ -253,7 +260,7 @@ export async function handleEns(
         `👤 Address: ${params.address.slice(0, 6)}...${params.address.slice(-4)}\n` +
         `💰 Profit/Loss: $${Number(newdtaa[0].abs_profit_usd).toFixed(2)}\n` +
         `📈 ROI: ${(Number(newdtaa[0].roi) * 100).toFixed(2)}%\n` +
-        `🔗 Chain: ${chain.toUpperCase()}\n` +
+        `🔗 Chain: ${selectedChain.name}\n` +
         `━━━━━━━━━━━━━━━━━━━━━`
       );
 
@@ -364,7 +371,7 @@ export async function handleEns(
     const welcomeMessage = `
 ╔════════════════════════════════╗
 ║     ✨ ENS DOMAIN BOT ✨      ║
-╚════════���═══════════════════════╝
+╚═══════════════════════════════╝
 
 🎮 𝗠𝗔𝗜𝗡 𝗙𝗘𝗔𝗧𝗨𝗥𝗘𝗦:
 
