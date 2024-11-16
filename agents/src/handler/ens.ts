@@ -7,8 +7,6 @@ import axios from "axios";
 export const frameUrl = "https://ens.steer.fun/";
 export const ensUrl = "https://app.ens.domains/";
 export const txpayUrl = "https://txpay.vercel.app";
-export const oneInchApiUrl = "https://api.1inch.dev/swap/v5.2";
-export const oneInchApiKey = "xDxGzCSlftybzYlijocx1yZRky74jkU5";
 
 // Add these token addresses as constants
 const TOKEN_ADDRESSES: Record<string, Record<string, string>> = {
@@ -162,8 +160,12 @@ export async function handleEns(
     try {
 
       const chainIdMap: Record<string, number> = {
-        base: 56,
+        bsc: 56,
         eth: 1,
+        polygon: 137,
+        arbitrum: 42161,
+        optimism: 10,
+        base: 8453
       };
 
       const inputChain = "eth"; // Replace with your input
@@ -224,7 +226,7 @@ export async function handleEns(
 
     try {
       const chainIdMap: Record<string, number> = {
-        bsc: 56,  // BSC first as default
+        bsc: 56,
         eth: 1,
         polygon: 137,
         arbitrum: 42161,
@@ -241,7 +243,6 @@ export async function handleEns(
       const fromTokenUpper = (fromToken as string).toUpperCase();
       const toTokenUpper = (toToken as string).toUpperCase();
 
-      // Check if tokens exist for the selected chain
       if (!TOKEN_ADDRESSES[chain.toLowerCase()] || 
           !TOKEN_ADDRESSES[chain.toLowerCase()][fromTokenUpper] || 
           !TOKEN_ADDRESSES[chain.toLowerCase()][toTokenUpper]) {
@@ -252,29 +253,32 @@ export async function handleEns(
       const toTokenAddress = TOKEN_ADDRESSES[chain.toLowerCase()][toTokenUpper];
 
       const quoteResponse = await axios.get(
-        `${oneInchApiUrl}/${chainId}/quote`,
+        `https://api.1inch.dev/swap/v6.0/${chainId}/swap`,
         {
           headers: {
-            Authorization: `Bearer ${oneInchApiKey}`,
+            Authorization: "Bearer xDxGzCSlftybzYlijocx1yZRky74jkU5",
           },
           params: {
             fromTokenAddress,
             toTokenAddress,
             amount,
+            slippage: 1,
+            fromAddress: sender?.address || "0x0000000000000000000000000000000000000000",
           },
         }
       );
 
       console.log("Quote Response:", quoteResponse.data);
 
-      const { toTokenAmount, estimatedGas } = quoteResponse.data;
+      const { dstAmount, tx } = quoteResponse.data;
+      const { gas, gasPrice } = tx;
 
-      // Format the amounts to be more readable
       const fromAmount = Number(amount) / (10 ** 18);
-      const toAmount = Number(toTokenAmount) / (10 ** 18);
+      const toAmount = Number(dstAmount) / (10 ** 18);
+      const estimatedGasInGwei = Number(gasPrice) / (10 ** 9);
 
       await context.send(
-        `Swap Quote Details:\nChain: BSC (BNB Chain)\nFrom: ${fromAmount} ${fromToken}\nTo: ${toAmount} ${toToken}\nEstimated Gas: ${estimatedGas} GWEI`
+        `Swap Quote Details:\nChain: BSC (BNB Chain)\nFrom: ${fromAmount} ${fromTokenUpper}\nTo: ${toAmount} ${toTokenUpper}\nEstimated Gas: ${gas} units @ ${estimatedGasInGwei} GWEI`
       );
 
       return {
