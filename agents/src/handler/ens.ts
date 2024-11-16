@@ -153,12 +153,14 @@ export async function handleEns(
       );
 
       console.log("Response Data:", response.data);
-
-      
-      // Send formatted data
-      await context.send(response.data );
-
-      // await context.send(response.data); // Send data back to the context
+  
+      const newdtaa=response.data.result.map((item: any) => ({
+        abs_profit_usd: item.abs_profit_usd,
+        roi: item.roi,
+      }
+    ));
+    console.log(newdtaa[0].abs_profit_usd+newdtaa[0].roi);
+ await context.send(`abs_profit_usd : ${newdtaa[0].abs_profit_usd}`+`\n roi: ${newdtaa[0].roi}`); // Send data back to the context
 
       return {
         code: 200,
