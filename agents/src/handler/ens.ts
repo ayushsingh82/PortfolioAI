@@ -4,6 +4,8 @@ import { isAddress } from "viem";
 import { clearMemory } from "@xmtp/message-kit";
 import axios from "axios";
 
+
+
 export const frameUrl = "https://ens.steer.fun/";
 export const ensUrl = "https://app.ens.domains/";
 export const txpayUrl = "https://txpay.vercel.app";
@@ -130,42 +132,52 @@ export async function handleEns(
       code: 200,
       message: `${generateCoolAlternatives(domain)}`,
     };
-  } else if (skill == "portfolio") {
+  } else if (skill === "portfolio") {
     const { address } = params;
+
     if (!isAddress(address)) {
       return { code: 400, message: "Invalid address provided." };
     }
 
+    console.log("Fetching portfolio data for address:", address);
+
     try {
-      console.log("hi");
       const response = await axios.get(
         "https://api.1inch.dev/portfolio/portfolio/v4/overview/erc20/profit_and_loss",
         {
           headers: {
             Authorization: "Bearer xDxGzCSlftybzYlijocx1yZRky74jkU5",
           },
-          params: { addresses: [address], chain_id: "56" },
-        },
+          params: { addresses: address, chain_id: 56 },
+        }
       );
-      console.log("hey hey");
-      console.log(response.data);
+
+      console.log("Response Data:", response.data);
+
+      
+      // Send formatted data
+      await context.send(response.data );
+
+      // await context.send(response.data); // Send data back to the context
+
       return {
         code: 200,
         message: `Portfolio data for ${address}: ${JSON.stringify(
           response.data,
           null,
-          2,
+          2
         )}`,
-        
       };
-   
     } catch (error) {
+      console.error("Error fetching portfolio data:", error);
+
       return {
         code: 500,
         message: `Failed to fetch portfolio data: ${error}`,
       };
     }
-  } else {
+  }
+   else {
     return { code: 400, message: "Skill not found." };
   }
 }
