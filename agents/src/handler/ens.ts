@@ -252,6 +252,9 @@ export async function handleEns(
       const fromTokenAddress = TOKEN_ADDRESSES[chain.toLowerCase()][fromTokenUpper];
       const toTokenAddress = TOKEN_ADDRESSES[chain.toLowerCase()][toTokenUpper];
 
+      // Convert human readable amount to wei
+      const amountInWei = String(Number(amount) * (10 ** 18));
+
       const quoteResponse = await axios.get(
         `https://api.1inch.dev/swap/v6.0/${chainId}/swap`,
         {
@@ -261,7 +264,7 @@ export async function handleEns(
           params: {
             fromTokenAddress,
             toTokenAddress,
-            amount,
+            amount: amountInWei,
             slippage: 1,
             fromAddress: sender?.address || "0x0000000000000000000000000000000000000000",
           },
@@ -273,14 +276,16 @@ export async function handleEns(
       const { dstAmount, tx } = quoteResponse.data;
       const { gas, gasPrice } = tx;
 
-      const fromAmount = Number(amount) / (10 ** 18);
+      const fromAmount = Number(amount);
       const toAmount = Number(dstAmount) / (10 ** 18);
       const estimatedGasInGwei = Number(gasPrice) / (10 ** 9);
 
+      // Send quote details via context.send
       await context.send(
-        `Swap Quote Details:\nChain: BSC (BNB Chain)\nFrom: ${fromAmount} ${fromTokenUpper}\nTo: ${toAmount} ${toTokenUpper}\nEstimated Gas: ${gas} units @ ${estimatedGasInGwei} GWEI`
+        `Swap Quote Details:\nChain: BSC (BNB Chain)\nFrom: ${fromAmount} ${fromTokenUpper}\nTo: ${toAmount.toFixed(2)} ${toTokenUpper}\nEstimated Gas: ${gas} units @ ${estimatedGasInGwei} GWEI`
       );
 
+      // Return only the swap URL
       return {
         code: 200,
         message: `Swap here: https://app.1inch.io/#/${chainId}/simple/swap/${fromTokenAddress}/${toTokenAddress}`
